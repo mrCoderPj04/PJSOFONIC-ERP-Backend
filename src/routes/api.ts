@@ -4,6 +4,22 @@ import { fetchCrmProjects } from '../services/crmService';
 
 export const apiRouter = Router();
 
+// Base /api Overview Route
+apiRouter.get('/', (req: Request, res: Response) => {
+  res.json({
+    name: 'PJSOFONIC ERP Express Backend API Router',
+    status: 'ACTIVE',
+    endpoints: {
+      health: '/api/health',
+      authLogin: '/api/auth/login [POST]',
+      employees: '/api/employees [GET]',
+      crmProjects: '/api/crm/projects [GET]',
+      qualityTesting: '/api/quality/testing-queue [GET]',
+    },
+  });
+});
+
+// Health Endpoint
 apiRouter.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'OK',
