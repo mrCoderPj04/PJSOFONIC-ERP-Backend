@@ -4,14 +4,15 @@ services:
     env: node
     region: singapore
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npm start
-    healthCheckPath: /api/health
     envVars:
       - key: PORT
-        value: 10000
+        value: 5000
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        value: postgresql://mr_coder_04:ak29SiBp5TG-gy1DBpPYcg@pjsofonicerp-31535.j77.aws-ap-south-1.cockroachlabs.cloud:26257/PJsofonic_erp?sslmode=verify-full
       - key: EMS_BACKEND_URL
         value: https://erp-backend-1-02lc.onrender.com/api
       - key: CRM_BACKEND_URL
