@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: pjsofonic-erp-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: EMS_BACKEND_URL
+        value: https://erp-backend-1-02lc.onrender.com/api
+      - key: CRM_BACKEND_URL
+        value: https://pjsofonic-crm-backend.onrender.com

@@ -1,0 +1,184 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ErpStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  WORK_SUBMITTED
+  REVIEW
+  DONE
+  REWORK
+}
+
+enum BugStatus {
+  OPEN
+  IN_PROGRESS
+  FIXED
+  RE_QA
+  CLOSED
+}
+
+model UserRef {
+  id              String         @id @default(uuid())
+  emsEmployeeId   String         @unique
+  email           String         @unique
+  fullName        String
+  roleId          String
+  department      String?
+  designation     String?
+  managerId       String?
+  erpStatus       ErpStatus      @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  projectMemberships ProjectMember[]
+  managedProjects    Project[]       @relation("ProjectManager")
+  createdTasks       Task[]          @relation("TaskCreator")
+  assignedTasks      Task[]          @relation("TaskAssignee")
+  attendanceLogs     Attendance[]
+  timesheets         Timesheet[]
+  bugsReported       Bug[]           @relation("BugReporter")
+  bugsAssigned       Bug[]           @relation("BugAssignee")
+}
+
+model Project {
+  id              String          @id @default(uuid())
+  code            String          @unique
+  name            String
+  description     String?
+  clientId        String?
+  managerId       String?
+  departmentScope String?         @default("Software Engineering")
+  startDate       DateTime
+  deadline        DateTime
+  priority        ProjectPriority @default(MEDIUM)
+  status          ProjectStatus   @default(PLANNING)
+  budget          Float           @default(0)
+  crmProjectId    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  manager         UserRef?        @relation("ProjectManager", fields: [managerId], references: [id])
+  members         ProjectMember[]
+  milestones      Milestone[]
+  tasks           Task[]
+  bugs            Bug[]
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  role      String   @default("MEMBER")
+  joinedAt  DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      UserRef  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  dueDate     DateTime
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+}
+
+model Task {
+  id            String          @id @default(uuid())
+  title         String
+  description   String?
+  projectId     String
+  milestoneId   String?
+  creatorId     String
+  assigneeId    String?
+  priority      ProjectPriority @default(MEDIUM)
+  status        TaskStatus      @default(TODO)
+  dueDate       DateTime?
+  submittedWork String?
+  reviewNotes   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone     Milestone?      @relation(fields: [milestoneId], references: [id])
+  creator       UserRef         @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee      UserRef?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  bugs          Bug[]
+}
+
+model Bug {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  severity    String    @default("MEDIUM")
+  status      BugStatus @default(OPEN)
+  projectId   String
+  taskId      String?
+  reporterId  String
+  assigneeId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        Task?     @relation(fields: [taskId], references: [id])
+  reporter    UserRef   @relation("BugReporter", fields: [reporterId], references: [id])
+  assignee    UserRef?  @relation("BugAssignee", fields: [assigneeId], references: [id])
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  userId       String
+  date         DateTime  @default(now())
+  clockIn      DateTime
+  clockOut     DateTime?
+  breakMinutes Int       @default(0)
+  totalHours   Float     @default(0)
+  status       String    @default("PRESENT")
+
+  user         UserRef   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Timesheet {
+  id          String   @id @default(uuid())
+  userId      String
+  projectId   String
+  hours       Float
+  description String?
+  date        DateTime @default(now())
+
+  user        UserRef  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
